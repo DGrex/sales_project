@@ -1,0 +1,438 @@
+{% extends 'billing/base.html' %}
+{% block title %}Productos{% endblock %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f6f8fa; }
+
+  /* ── Page header ── */
+  .page-header { background: linear-gradient(135deg, #b05027 0%, #d4703b 100%); border-radius: 16px; padding: 24px 28px; color: #fff; }
+  .page-header h1 { font-weight: 800; font-size: 1.5rem; margin: 0; letter-spacing: -.5px; }
+  .page-header p  { margin: 4px 0 0; opacity: .85; font-size: .88rem; }
+
+  /* ── Cards ── */
+  .glass-card { background: #fff; border: 1px solid #eef1f6; border-radius: 14px; box-shadow: 0 2px 12px rgba(0,0,0,.03); }
+
+  /* ── Filter section ── */
+  .filter-label { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #6b7280; margin-bottom: 5px; }
+  .form-control-sm, .form-select-sm { border-radius: 8px; border: 1px solid #dce2ea; font-size: .84rem; padding: 6px 10px; }
+  .form-control-sm:focus, .form-select-sm:focus { border-color: #b05027; box-shadow: 0 0 0 3px rgba(176,80,39,.12); }
+
+  /* ── Export buttons ── */
+  .btn-pdf   { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; border-radius: 10px; font-size: .82rem; font-weight: 700; padding: 7px 16px; transition: all .2s; }
+  .btn-pdf:hover   { background: #fca5a5; color: #7f1d1d; }
+  .btn-excel { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; border-radius: 10px; font-size: .82rem; font-weight: 700; padding: 7px 16px; transition: all .2s; }
+  .btn-excel:hover { background: #6ee7b7; color: #064e3b; }
+
+  /* ── Table ── */
+  .products-table { background: #fff; border: 1px solid #eef1f6; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,.03); }
+  .products-table thead th { background: #f8fafc; border-bottom: 2px solid #eef1f6; color: #6c757d; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; padding: 13px 16px; white-space: nowrap; }
+  .products-table tbody td { padding: 13px 16px; vertical-align: middle; border-bottom: 1px solid #f2f4f7; font-size: .875rem; }
+  .products-table tbody tr:last-child td { border-bottom: none; }
+  .products-table tbody tr:hover { background: #fafbfc; }
+
+  /* ── Badges ── */
+  .badge-active   { background: #d1fae5; color: #065f46; font-size: .7rem; font-weight: 700; border-radius: 50px; padding: 3px 10px; }
+  .badge-inactive { background: #fee2e2; color: #991b1b; font-size: .7rem; font-weight: 700; border-radius: 50px; padding: 3px 10px; }
+  .badge-stock-ok  { background: #dbeafe; color: #1e40af; font-size: .75rem; font-weight: 700; border-radius: 50px; padding: 3px 9px; }
+  .badge-stock-out { background: #fee2e2; color: #991b1b; font-size: .75rem; font-weight: 700; border-radius: 50px; padding: 3px 9px; }
+
+  /* ── Action buttons (table) ── */
+  .btn-view   { background: #f0fdf4; color: #065f46; border: 1px solid #bbf7d0; border-radius: 7px; padding: 4px 10px; font-size: .78rem; font-weight: 600; text-decoration: none; transition: all .2s; display: inline-block; }
+  .btn-view:hover   { background: #d1fae5; }
+  .btn-edit   { background: #fff7ed; color: #9a3412; border: 1px solid #fed7aa; border-radius: 7px; padding: 4px 10px; font-size: .78rem; font-weight: 600; text-decoration: none; transition: all .2s; display: inline-block; }
+  .btn-edit:hover   { background: #ffedd5; }
+  .btn-del    { background: #fff1f2; color: #9f1239; border: 1px solid #fecdd3; border-radius: 7px; padding: 4px 10px; font-size: .78rem; font-weight: 600; text-decoration: none; transition: all .2s; display: inline-block; }
+  .btn-del:hover    { background: #ffe4e6; }
+
+  /* ── Pagination ── */
+  .page-link { color: #b05027; border-radius: 8px !important; margin: 0 2px; border-color: #eef1f6; font-size: .85rem; }
+  .page-item.active .page-link { background: #b05027; border-color: #b05027; color: #fff; }
+
+  /* ── VIEW MODAL ── */
+  .modal-content { border: none; border-radius: 18px; overflow: hidden; }
+  .modal-header-custom { background: linear-gradient(135deg, #b05027, #d4703b); color: #fff; padding: 20px 26px; }
+  .modal-header-custom .modal-title { font-weight: 800; font-size: 1.05rem; }
+  .modal-header-custom .btn-close { filter: invert(1) brightness(2); }
+  .img-panel { background: #f8fafc; border-right: 1px solid #eef1f6; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 28px 20px; min-height: 340px; }
+  .img-panel img { max-height: 180px; object-fit: contain; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,.1); }
+  .status-pill-active   { background: #d1fae5; color: #065f46; border-radius: 50px; padding: 5px 14px; font-size: .75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; margin-top: 16px; }
+  .status-pill-inactive { background: #fee2e2; color: #991b1b; border-radius: 50px; padding: 5px 14px; font-size: .75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; margin-top: 16px; }
+  .info-panel { padding: 24px 26px; }
+  .info-panel .sku-badge { background: #f1f5f9; color: #64748b; border-radius: 8px; padding: 3px 9px; font-size: .72rem; font-weight: 700; letter-spacing: .5px; }
+  .info-panel .product-name { font-size: 1.4rem; font-weight: 800; color: #1a202c; margin: 7px 0 12px; letter-spacing: -.4px; }
+  .stat-card { border-radius: 11px; padding: 12px 14px; flex: 1; }
+  .stat-card.green { background: #f0fdf4; border: 1px solid #bbf7d0; }
+  .stat-card.blue  { background: #eff6ff; border: 1px solid #bfdbfe; }
+  .stat-card .stat-label { font-size: .67rem; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: #6b7280; margin-bottom: 3px; }
+  .stat-card.green .stat-value { font-size: 1.25rem; font-weight: 800; color: #065f46; }
+  .stat-card.blue  .stat-value { font-size: 1.25rem; font-weight: 800; color: #1d4ed8; }
+  .detail-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: .85rem; }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-row .dr-label { color: #6b7280; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+  .detail-row .dr-value { font-weight: 700; color: #1a202c; text-align: right; }
+  .modal-footer-custom { background: #f8fafc; border-top: 1px solid #eef1f6; padding: 14px 22px; }
+</style>
+
+<div class="container-fluid py-4">
+
+  <!-- ── Page Header ── -->
+  <div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1><i class="fas fa-box-open me-2"></i>Gestión de Productos</h1>
+      <p>
+        {% if total_count %}
+          <strong>{{ total_count }}</strong> producto{{ total_count|pluralize }} encontrado{{ total_count|pluralize }}.
+        {% else %}
+          Administra tu catálogo de productos de forma centralizada.
+        {% endif %}
+      </p>
+    </div>
+    <a href="{% url 'billing:product_create' %}" class="btn btn-light fw-bold rounded-pill px-4 shadow-sm" style="color:#b05027;">
+      <i class="fas fa-plus me-1"></i> Nuevo Producto
+    </a>
+  </div>
+
+  <!-- ══════════════ FILTER PANEL ══════════════ -->
+  <div class="glass-card p-4 mb-4">
+    <form method="get" id="filterForm">
+      <div class="row g-3 mb-3">
+
+        <!-- Nombre -->
+        <div class="col-md-3">
+          <div class="filter-label"><i class="fas fa-font me-1"></i>Nombre del Producto</div>
+          <input type="text" name="name" id="id_name" value="{{ f_name }}" class="form-control form-control-sm" placeholder="Ej: Laptop, Silla…">
+        </div>
+
+        <!-- Descripción -->
+        <div class="col-md-3">
+          <div class="filter-label"><i class="fas fa-align-left me-1"></i>Descripción</div>
+          <input type="text" name="description" id="id_description" value="{{ f_description }}" class="form-control form-control-sm" placeholder="Palabras clave…">
+        </div>
+
+        <!-- Marca -->
+        <div class="col-md-2">
+          <div class="filter-label"><i class="fas fa-tag me-1"></i>Marca</div>
+          <select name="brand" id="id_brand" class="form-select form-select-sm">
+            <option value="">— Todas —</option>
+            {% for b in brands %}
+              <option value="{{ b.pk }}" {% if selected_brand == b.pk|stringformat:"s" %}selected{% endif %}>{{ b.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Grupo -->
+        <div class="col-md-2">
+          <div class="filter-label"><i class="fas fa-layer-group me-1"></i>Grupo / Cat.</div>
+          <select name="group" id="id_group" class="form-select form-select-sm">
+            <option value="">— Todos —</option>
+            {% for g in groups %}
+              <option value="{{ g.pk }}" {% if selected_group == g.pk|stringformat:"s" %}selected{% endif %}>{{ g.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Proveedor -->
+        <div class="col-md-2">
+          <div class="filter-label"><i class="fas fa-truck me-1"></i>Proveedor</div>
+          <select name="supplier" id="id_supplier" class="form-select form-select-sm">
+            <option value="">— Todos —</option>
+            {% for s in suppliers %}
+              <option value="{{ s.pk }}" {% if selected_supplier == s.pk|stringformat:"s" %}selected{% endif %}>{{ s.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+      </div>
+
+      <div class="row g-3 align-items-end">
+
+        <!-- Precio Mín -->
+        <div class="col-md-2">
+          <div class="filter-label"><i class="fas fa-dollar-sign me-1"></i>Precio Mín.</div>
+          <input type="number" name="min_price" id="id_min_price" value="{{ min_price }}" class="form-control form-control-sm" placeholder="0.00" min="0" step="0.01">
+        </div>
+
+        <!-- Precio Máx -->
+        <div class="col-md-2">
+          <div class="filter-label"><i class="fas fa-dollar-sign me-1"></i>Precio Máx.</div>
+          <input type="number" name="max_price" id="id_max_price" value="{{ max_price }}" class="form-control form-control-sm" placeholder="9999.99" min="0" step="0.01">
+        </div>
+
+        <!-- Stock Mín -->
+        <div class="col-md-2">
+          <div class="filter-label"><i class="fas fa-cubes me-1"></i>Stock Mín.</div>
+          <input type="number" name="min_stock" id="id_min_stock" value="{{ min_stock }}" class="form-control form-control-sm" placeholder="0" min="0" step="1">
+        </div>
+
+        <!-- Stock Máx -->
+        <div class="col-md-2">
+          <div class="filter-label"><i class="fas fa-cubes me-1"></i>Stock Máx.</div>
+          <input type="number" name="max_stock" id="id_max_stock" value="{{ max_stock }}" class="form-control form-control-sm" placeholder="999" min="0" step="1">
+        </div>
+
+        <!-- Estado Stock -->
+        <div class="col-md-2">
+          <div class="filter-label"><i class="fas fa-warehouse me-1"></i>Estado Stock</div>
+          <select name="stock_status" id="id_stock_status" class="form-select form-select-sm">
+            <option value="">— Cualquiera —</option>
+            <option value="available" {% if stock_status == 'available' %}selected{% endif %}>En stock</option>
+            <option value="low"       {% if stock_status == 'low'       %}selected{% endif %}>Stock bajo (≤10)</option>
+            <option value="out"       {% if stock_status == 'out'       %}selected{% endif %}>Agotado</option>
+          </select>
+        </div>
+
+        <!-- Activo -->
+        <div class="col-md-2">
+          <div class="filter-label"><i class="fas fa-toggle-on me-1"></i>Activo en Catálogo</div>
+          <select name="is_active" id="id_is_active" class="form-select form-select-sm">
+            <option value="">— Todos —</option>
+            <option value="1" {% if is_active == '1' %}selected{% endif %}>Sí — Activo</option>
+            <option value="0" {% if is_active == '0' %}selected{% endif %}>No — Inactivo</option>
+          </select>
+        </div>
+
+      </div>
+
+      <!-- Action row: filter + clear + export -->
+      <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-sm rounded-pill px-4 fw-bold shadow-sm" style="background:#b05027; color:#fff;">
+            <i class="fas fa-search me-1"></i>Filtrar
+          </button>
+          <a href="{% url 'billing:product_list' %}" class="btn btn-sm btn-outline-secondary rounded-pill px-4">
+            <i class="fas fa-times me-1"></i>Limpiar
+          </a>
+        </div>
+
+        <!-- Export buttons (preserves current filters) -->
+        <div class="d-flex gap-2">
+          <a href="?{{ filter_querystring }}&export=pdf"
+             class="btn-pdf d-flex align-items-center gap-2"
+             title="Descargar PDF con los registros filtrados">
+            <i class="fas fa-file-pdf"></i> Exportar PDF
+          </a>
+          <a href="?{{ filter_querystring }}&export=excel"
+             class="btn-excel d-flex align-items-center gap-2"
+             title="Descargar Excel con los registros filtrados">
+            <i class="fas fa-file-excel"></i> Exportar Excel
+          </a>
+        </div>
+      </div>
+    </form>
+  </div>
+  <!-- ══════════════════════════════════════════ -->
+
+  <!-- ── Table ── -->
+  <div class="products-table">
+    <table class="table mb-0">
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Marca</th>
+          <th>Grupo</th>
+          <th>Precio</th>
+          <th>Stock</th>
+          <th>Proveedores</th>
+          <th>Estado</th>
+          <th class="text-end">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in page_obj %}
+        <tr>
+          <td>
+            <div class="fw-bold text-dark">{{ item.name }}</div>
+            {% if item.description %}
+              <div class="text-muted" style="font-size:.76rem; max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ item.description }}</div>
+            {% endif %}
+          </td>
+          <td><span class="badge bg-secondary bg-opacity-75 rounded-pill" style="font-size:.72rem;">{{ item.brand.name }}</span></td>
+          <td style="font-size:.85rem;">{{ item.group.name }}</td>
+          <td class="fw-bold" style="color:#065f46;">${{ item.unit_price }}</td>
+          <td>
+            {% if item.stock == 0 %}
+              <span class="badge-stock-out"><i class="fas fa-times-circle me-1"></i>{{ item.stock }}</span>
+            {% elif item.stock <= 10 %}
+              <span class="badge" style="background:#fef3c7; color:#92400e; font-size:.73rem; font-weight:700; border-radius:50px; padding:3px 9px;">
+                <i class="fas fa-exclamation-triangle me-1"></i>{{ item.stock }}
+              </span>
+            {% else %}
+              <span class="badge-stock-ok"><i class="fas fa-check-circle me-1"></i>{{ item.stock }}</span>
+            {% endif %}
+          </td>
+          <td>
+            {% for s in item.suppliers.all %}
+              <span class="badge bg-light text-dark border" style="font-size:.7rem;">{{ s.name }}</span>
+            {% empty %}
+              <span class="text-muted fst-italic" style="font-size:.8rem;">—</span>
+            {% endfor %}
+          </td>
+          <td>
+            {% if item.is_active %}
+              <span class="badge-active"><i class="fas fa-circle me-1" style="font-size:.4rem;"></i>Activo</span>
+            {% else %}
+              <span class="badge-inactive"><i class="fas fa-circle me-1" style="font-size:.4rem;"></i>Inactivo</span>
+            {% endif %}
+          </td>
+          <td class="text-end">
+            <div class="d-flex gap-1 justify-content-end">
+              <button class="btn-view" data-bs-toggle="modal" data-bs-target="#viewModal{{ item.pk }}" title="Ver detalles">
+                <i class="fas fa-eye me-1"></i>Ver
+              </button>
+              <a href="{% url 'billing:product_update' item.pk %}" class="btn-edit" title="Editar">
+                <i class="fas fa-pencil-alt me-1"></i>Editar
+              </a>
+              <a href="{% url 'billing:product_delete' item.pk %}" class="btn-del" title="Eliminar">
+                <i class="fas fa-trash-alt me-1"></i>Borrar
+              </a>
+            </div>
+          </td>
+        </tr>
+
+        <!-- ═══════════════ VIEW MODAL ═══════════════ -->
+        <div class="modal fade" id="viewModal{{ item.pk }}" tabindex="-1" aria-labelledby="viewModalLabel{{ item.pk }}" aria-hidden="true">
+          <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+
+              <div class="modal-header-custom d-flex justify-content-between align-items-center">
+                <div class="modal-title">
+                  <i class="fas fa-box me-2"></i>Detalle del Producto
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+              </div>
+
+              <div class="modal-body p-0">
+                <div class="row g-0">
+
+                  <!-- LEFT -->
+                  <div class="col-md-4 img-panel">
+                    {% if item.image %}
+                      <img src="{{ item.image.url }}" alt="{{ item.name }}">
+                    {% else %}
+                      <img src="https://ui-avatars.com/api/?name={{ item.name|urlencode }}&size=200&background=b05027&color=fff&bold=true&rounded=true" alt="{{ item.name }}">
+                    {% endif %}
+
+                    {% if item.is_active %}
+                      <span class="status-pill-active"><span style="width:8px;height:8px;border-radius:50%;background:#10b981;display:inline-block;"></span>Activo en Catálogo</span>
+                    {% else %}
+                      <span class="status-pill-inactive"><span style="width:8px;height:8px;border-radius:50%;background:#ef4444;display:inline-block;"></span>Inactivo en Catálogo</span>
+                    {% endif %}
+
+                    <div class="mt-3 text-center text-muted" style="font-size:.73rem;">
+                      Creado: {{ item.created_at|date:"d/m/Y" }}
+                    </div>
+                  </div>
+
+                  <!-- RIGHT -->
+                  <div class="col-md-8 info-panel">
+                    <div class="sku-badge">SKU / ID: #{{ item.pk }}</div>
+                    <h4 class="product-name">{{ item.name }}</h4>
+
+                    <div class="d-flex gap-3 mb-3">
+                      <div class="stat-card green">
+                        <div class="stat-label"><i class="fas fa-dollar-sign me-1"></i>Precio Unitario</div>
+                        <div class="stat-value">${{ item.unit_price }}</div>
+                      </div>
+                      <div class="stat-card blue">
+                        <div class="stat-label"><i class="fas fa-cubes me-1"></i>Stock Actual</div>
+                        <div class="stat-value">{{ item.stock }} uds.</div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div class="detail-row">
+                        <span class="dr-label"><i class="fas fa-tag text-warning"></i>Marca</span>
+                        <span class="dr-value"><span class="badge bg-secondary rounded-pill">{{ item.brand.name }}</span></span>
+                      </div>
+                      <div class="detail-row">
+                        <span class="dr-label"><i class="fas fa-layer-group text-info"></i>Grupo / Categoría</span>
+                        <span class="dr-value">{{ item.group.name }}</span>
+                      </div>
+                      <div class="detail-row">
+                        <span class="dr-label"><i class="fas fa-truck text-primary"></i>Proveedores</span>
+                        <span class="dr-value">
+                          {% for s in item.suppliers.all %}
+                            <span class="badge bg-light text-dark border me-1">{{ s.name }}</span>
+                          {% empty %}
+                            <span class="text-muted fst-italic">Sin proveedores</span>
+                          {% endfor %}
+                        </span>
+                      </div>
+                      {% if item.description %}
+                      <div class="detail-row">
+                        <span class="dr-label"><i class="fas fa-align-left text-secondary"></i>Descripción</span>
+                        <span class="dr-value text-muted" style="font-size:.82rem; max-width:210px; text-align:right;">{{ item.description }}</span>
+                      </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="modal-footer-custom d-flex justify-content-between align-items-center">
+                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">
+                  <i class="fas fa-times me-1"></i>Cerrar
+                </button>
+                <div class="d-flex gap-2">
+                  <a href="{% url 'billing:product_update' item.pk %}" class="btn btn-sm rounded-pill px-4 fw-bold" style="background:#fff7ed; color:#9a3412; border:1px solid #fed7aa;">
+                    <i class="fas fa-pencil-alt me-1"></i>Editar
+                  </a>
+                  <a href="{% url 'billing:product_delete' item.pk %}" class="btn btn-sm rounded-pill px-4 fw-bold" style="background:#fff1f2; color:#9f1239; border:1px solid #fecdd3;">
+                    <i class="fas fa-trash-alt me-1"></i>Eliminar
+                  </a>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+        <!-- ══════════════════════════════════════════ -->
+
+        {% empty %}
+        <tr>
+          <td colspan="8" class="text-center py-5">
+            <i class="fas fa-search fa-3x text-muted mb-3 d-block" style="opacity:.3;"></i>
+            <div class="fw-bold text-muted mb-1">Sin resultados</div>
+            <small class="text-muted">Ajusta los filtros o <a href="{% url 'billing:product_create' %}">crea un nuevo producto</a>.</small>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Pagination ── -->
+  {% if page_obj.has_other_pages %}
+  <nav class="mt-4 d-flex justify-content-center" aria-label="Paginación productos">
+    <ul class="pagination gap-1">
+      {% if page_obj.has_previous %}
+        <li class="page-item">
+          <a class="page-link" href="?{{ filter_querystring }}&page={{ page_obj.previous_page_number }}" aria-label="Anterior">
+            <i class="fas fa-chevron-left" style="font-size:.75rem;"></i>
+          </a>
+        </li>
+      {% endif %}
+
+      {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+          <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+          <li class="page-item"><a class="page-link" href="?{{ filter_querystring }}&page={{ num }}">{{ num }}</a></li>
+        {% endif %}
+      {% endfor %}
+
+      {% if page_obj.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?{{ filter_querystring }}&page={{ page_obj.next_page_number }}" aria-label="Siguiente">
+            <i class="fas fa-chevron-right" style="font-size:.75rem;"></i>
+          </a>
+        </li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
+
+</div>
+{% endblock %}

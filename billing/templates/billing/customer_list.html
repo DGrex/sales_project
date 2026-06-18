@@ -1,0 +1,28 @@
+{% extends 'billing/base.html' %}
+{% block title %}Clientes{% endblock %}
+{% block content %}
+<h2>Clientes</h2>
+<a href="{% url 'billing:customer_create' %}" class="btn btn-primary mb-3">+ Nuevo cliente</a>
+<table class="table table-striped table-hover">
+  <thead class="table-dark">
+    <tr><th>Cédula/RUC</th><th>Apellido</th><th>Nombre</th><th>Correo</th><th>Teléfono</th><th>Acciones</th></tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.dni }}</td>
+      <td>{{ item.last_name }}</td>
+      <td>{{ item.first_name }}</td>
+      <td>{{ item.email|default:"-" }}</td>
+      <td>{{ item.phone|default:"-" }}</td>
+      <td>
+        <a href="{% url 'billing:customer_update' item.pk %}" class="btn btn-sm btn-warning">Editar</a>
+        <a href="{% url 'billing:customer_delete' item.pk %}" class="btn btn-sm btn-danger">Borrar</a>
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="6" class="text-center">No hay clientes registrados</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

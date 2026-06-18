@@ -1,0 +1,477 @@
+{% extends 'billing/base.html' %}
+{% block title %}{% if object %}Editar Producto{% else %}Nuevo Producto{% endif %}{% endblock %}
+{% block content %}
+<!-- Google Fonts & Custom CSS -->
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body {
+    background-color: #f6f8fa;
+  }
+  .form-page-container {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+  .form-section-card {
+    background: #ffffff;
+    border: 1px solid #eef1f6;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+    transition: all 0.3s ease;
+  }
+  .form-section-card:hover {
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.04);
+  }
+  .section-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #495057;
+    letter-spacing: 0.5px;
+  }
+  .form-label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .form-control, .form-select {
+    font-size: 0.95rem;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid #dce2ea;
+    background-color: #fdfefe;
+    color: #2b303a;
+    transition: all 0.2s ease;
+  }
+  .form-control:focus, .form-select:focus {
+    background-color: #ffffff;
+    border-color: #b05027;
+    outline: 0;
+    box-shadow: 0 0 0 4px rgba(176, 80, 39, 0.12);
+  }
+  .input-group-text {
+    border-radius: 10px 0 0 10px;
+    border: 1px solid #dce2ea;
+    border-right: none;
+    background-color: #f8fafc;
+    color: #8c9ba5;
+    padding: 10px 14px;
+  }
+  .input-group > .form-control {
+    border-radius: 0 10px 10px 0;
+  }
+  /* Dropzone Custom UI */
+  .dropzone-container {
+    border: 2px dashed #dce2ea;
+    border-radius: 14px;
+    background-color: #f8fafc;
+    cursor: pointer;
+    transition: all 0.25s ease;
+  }
+  .dropzone-container:hover {
+    border-color: #b05027;
+    background-color: #fdf6f2;
+  }
+  /* Custom form switch */
+  .form-switch .form-check-input {
+    width: 2.8em;
+    height: 1.5em;
+    cursor: pointer;
+    background-color: #e2e8f0;
+    border-color: transparent;
+  }
+  .form-switch .form-check-input:checked {
+    background-color: #b05027;
+    border-color: transparent;
+  }
+  .form-switch .form-check-input:focus {
+    box-shadow: 0 0 0 4px rgba(176, 80, 39, 0.15);
+  }
+  /* Floating active status card */
+  .status-card {
+    border-radius: 12px;
+    border: 1px solid #eef1f6;
+    background: #ffffff;
+    transition: all 0.25s ease;
+  }
+  .status-card.active {
+    background-color: #f0fdf4;
+    border-color: #bbf7d0;
+  }
+  /* Save bar styling */
+  .action-bar {
+    border-top: 1px solid #eef1f6;
+    background: #ffffff;
+  }
+</style>
+
+<div class="container py-4 form-page-container">
+  
+  <!-- Breadcrumbs & Heading -->
+  <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-4 gap-2">
+    <div>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-1" style="font-size: 0.85rem;">
+          <li class="breadcrumb-item"><a href="{% url 'billing:product_list' %}" class="text-decoration-none text-muted">Productos</a></li>
+          <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">
+            {% if object %}Editar{% else %}Nuevo{% endif %}
+          </li>
+        </ol>
+      </nav>
+      <h2 class="fw-extrabold text-dark mb-0" style="font-weight: 800; letter-spacing: -0.5px;">
+        {% if object %}Editar Producto{% else %}Nuevo Producto{% endif %}
+      </h2>
+    </div>
+    <a href="{% url 'billing:product_list' %}" class="btn btn-outline-secondary rounded-pill px-4 btn-sm d-flex align-items-center gap-2">
+      <i class="fas fa-arrow-left"></i> Volver al Listado
+    </a>
+  </div>
+
+  <form method="post" enctype="multipart/form-data" id="productForm" novalidate>
+    {% csrf_token %}
+
+    <!-- Hide django standard image input and handle via JS -->
+    <div class="d-none">
+      {{ form.image }}
+    </div>
+
+    <div class="row g-4">
+      
+      <!-- Left side: Form data -->
+      <div class="col-lg-8">
+        
+        <!-- CARD 1: Basic Information -->
+        <div class="form-section-card p-4 mb-4">
+          <div class="d-flex align-items-center mb-3">
+            <span class="d-inline-flex p-2 bg-primary-subtle text-primary rounded-3 me-2" style="background-color: #fdf6f2 !important; color: #b05027 !important;">
+              <i class="fas fa-info-circle fs-5"></i>
+            </span>
+            <h5 class="section-title mb-0">Información del Producto</h5>
+          </div>
+
+          <!-- Product Name -->
+          <div class="mb-3 field-container {% if form.name.errors %}has-error{% endif %}">
+            <label class="form-label" for="id_name">Nombre del Producto</label>
+            {{ form.name }}
+            {% for error in form.name.errors %}
+              <div class="text-danger small mt-1"><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <!-- Description -->
+          <div class="mb-0 field-container {% if form.description.errors %}has-error{% endif %}">
+            <label class="form-label" for="id_description">Descripción</label>
+            {{ form.description }}
+            <div class="d-flex justify-content-between mt-1">
+              <small class="text-muted">Proporciona detalles útiles para el catálogo.</small>
+              <small class="text-muted" id="charCounter">0 / 500 caracteres</small>
+            </div>
+            {% for error in form.description.errors %}
+              <div class="text-danger small mt-1"><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- CARD 2: Price and Inventory -->
+        <div class="form-section-card p-4 mb-4">
+          <div class="d-flex align-items-center mb-3">
+            <span class="d-inline-flex p-2 bg-success-subtle text-success rounded-3 me-2" style="background-color: #eafbf2 !important; color: #198754 !important;">
+              <i class="fas fa-calculator fs-5"></i>
+            </span>
+            <h5 class="section-title mb-0">Precios e Inventario</h5>
+          </div>
+
+          <div class="row g-3">
+            <!-- Price -->
+            <div class="col-md-6 field-container {% if form.unit_price.errors %}has-error{% endif %}">
+              <label class="form-label" for="id_unit_price">Precio de Venta</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="fas fa-dollar-sign"></i></span>
+                {{ form.unit_price }}
+              </div>
+              <small class="text-muted mt-1 d-block">Debe ser estrictamente mayor a 0.</small>
+              {% for error in form.unit_price.errors %}
+                <div class="text-danger small mt-1" id="price-validation-msg"><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</div>
+              {% endfor %}
+            </div>
+            <!-- Stock -->
+            <div class="col-md-6 field-container {% if form.stock.errors %}has-error{% endif %}">
+              <label class="form-label" for="id_stock">Cantidad en Stock</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="fas fa-cubes"></i></span>
+                {{ form.stock }}
+              </div>
+              <small class="text-muted mt-1 d-block">Cantidad disponible actualmente.</small>
+              {% for error in form.stock.errors %}
+                <div class="text-danger small mt-1"><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD 3: Organization & Relationships -->
+        <div class="form-section-card p-4">
+          <div class="d-flex align-items-center mb-3">
+            <span class="d-inline-flex p-2 bg-info-subtle text-info rounded-3 me-2" style="background-color: #ecf8fd !important; color: #0dcaf0 !important;">
+              <i class="fas fa-project-diagram fs-5"></i>
+            </span>
+            <h5 class="section-title mb-0">Clasificación y Proveedores</h5>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <!-- Brand -->
+            <div class="col-md-6 field-container {% if form.brand.errors %}has-error{% endif %}">
+              <label class="form-label" for="id_brand">Marca</label>
+              {{ form.brand }}
+              {% for error in form.brand.errors %}
+                <div class="text-danger small mt-1"><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</div>
+              {% endfor %}
+            </div>
+            <!-- Group -->
+            <div class="col-md-6 field-container {% if form.group.errors %}has-error{% endif %}">
+              <label class="form-label" for="id_group">Categoría / Grupo</label>
+              {{ form.group }}
+              {% for error in form.group.errors %}
+                <div class="text-danger small mt-1"><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- Suppliers -->
+          <div class="field-container {% if form.suppliers.errors %}has-error{% endif %}">
+            <label class="form-label" for="id_suppliers">Proveedores Asignados</label>
+            {{ form.suppliers }}
+            <small class="text-muted d-block mt-2">
+              <i class="fas fa-keyboard me-1"></i> Mantén presionado <strong>Ctrl</strong> (o <strong>Cmd</strong> en Mac) para elegir múltiples proveedores.
+            </small>
+            {% for error in form.suppliers.errors %}
+              <div class="text-danger small mt-1"><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Right side: Image dropzone & Visibility -->
+      <div class="col-lg-4">
+        
+        <!-- CARD 4: Image Drag & Drop -->
+        <div class="form-section-card p-4 mb-4 text-center">
+          <div class="d-flex align-items-center justify-content-center mb-3">
+            <span class="d-inline-flex p-2 rounded-3 me-2" style="background-color: #fdf6f2 !important; color: #b05027 !important;">
+              <i class="fas fa-image fs-5"></i>
+            </span>
+            <h5 class="section-title mb-0">Imagen de Portada</h5>
+          </div>
+
+          <!-- Custom Dropzone Area -->
+          <div class="dropzone-container p-4 d-flex flex-column align-items-center justify-content-center" id="customDropzone" style="min-height: 250px;">
+            <div id="dropzonePlaceholder">
+              <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3" id="cloudIcon"></i>
+              <p class="mb-1 fw-bold text-dark" style="font-size: 0.9rem;">Subir archivo de imagen</p>
+              <p class="text-muted small mb-0">Arrastra una foto aquí o haz clic para buscar</p>
+            </div>
+            
+            <div id="dropzonePreviewContainer" class="d-none w-100">
+              <img id="imagePreview" src="" alt="Vista previa" class="img-fluid rounded shadow-sm border mb-2" style="max-height: 180px; object-fit: contain;">
+              <div class="d-flex justify-content-center gap-2 mt-3">
+                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3" id="btnRemoveImage">
+                  <i class="fas fa-trash-alt me-1"></i> Eliminar
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" id="btnChangeImage">
+                  <i class="fas fa-sync-alt me-1"></i> Cambiar
+                </button>
+              </div>
+            </div>
+          </div>
+          {% for error in form.image.errors %}
+            <div class="text-danger small mt-2"><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <!-- CARD 5: Status Visibility -->
+        <div class="form-section-card p-4">
+          <div class="d-flex align-items-center mb-3">
+            <span class="d-inline-flex p-2 rounded-3 me-2" style="background-color: #ecf8fd !important; color: #0dcaf0 !important;">
+              <i class="fas fa-eye fs-5"></i>
+            </span>
+            <h5 class="section-title mb-0">Visibilidad en Catálogo</h5>
+          </div>
+
+          <div class="status-card p-3 d-flex align-items-center justify-content-between {% if form.is_active.value %}active{% endif %}" id="visibilityCard">
+            <div>
+              <label class="fw-bold text-dark mb-0 d-block" style="font-size: 0.9rem; cursor: pointer;" for="id_is_active">Visibilidad Activa</label>
+              <small class="text-muted d-block" style="font-size: 0.78rem;">Visible para compras y facturación.</small>
+            </div>
+            <div class="form-check form-switch p-0 m-0">
+              {{ form.is_active }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sticky action bar at the bottom -->
+    <div class="form-section-card action-bar p-3 mt-4 d-flex justify-content-between align-items-center">
+      <a href="{% url 'billing:product_list' %}" class="btn btn-light px-4 rounded-pill fw-semibold border text-secondary">
+        <i class="fas fa-times me-1"></i> Cancelar
+      </a>
+      <button type="submit" class="btn btn-success px-5 rounded-pill fw-bold shadow" style="background-color: #b05027; border-color: #b05027;">
+        <i class="fas fa-check-circle me-1"></i> {% if object %}Guardar Cambios{% else %}Crear Producto{% endif %}
+      </button>
+    </div>
+
+  </form>
+</div>
+
+<!-- Interactive Javascript and Validation Logic -->
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    
+    // 1. Dynamic class bindings for Validation errors
+    const errorContainers = document.querySelectorAll('.field-container.has-error');
+    errorContainers.forEach(container => {
+      const inputs = container.querySelectorAll('input, select, textarea');
+      inputs.forEach(input => {
+        input.classList.add('is-invalid');
+      });
+    });
+
+    // 2. Character counter for description
+    const descField = document.getElementById('id_description');
+    const counter = document.getElementById('charCounter');
+    if (descField && counter) {
+      const updateCounter = () => {
+        const length = descField.value.length;
+        counter.textContent = `${length} / 500 caracteres`;
+        if (length > 450) {
+          counter.className = 'text-warning';
+        } else if (length >= 500) {
+          counter.className = 'text-danger fw-bold';
+        } else {
+          counter.className = 'text-muted';
+        }
+      };
+      descField.addEventListener('input', updateCounter);
+      updateCounter(); // Init
+    }
+
+    // 3. Real-time client-side price validation focus
+    const priceInput = document.getElementById('id_unit_price');
+    if (priceInput) {
+      priceInput.addEventListener('input', function() {
+        const val = parseFloat(this.value);
+        if (isNaN(val) || val <= 0) {
+          this.classList.add('is-invalid');
+        } else {
+          this.classList.remove('is-invalid');
+        }
+      });
+    }
+
+    // 4. Custom Drag & Drop Zone Handler
+    const hiddenImageInput = document.getElementById('id_image');
+    const customDropzone = document.getElementById('customDropzone');
+    const placeholder = document.getElementById('dropzonePlaceholder');
+    const previewContainer = document.getElementById('dropzonePreviewContainer');
+    const previewImage = document.getElementById('imagePreview');
+    const btnRemove = document.getElementById('btnRemoveImage');
+    const btnChange = document.getElementById('btnChangeImage');
+
+    // Trigger click on hidden input
+    customDropzone.addEventListener('click', function(e) {
+      // Avoid recursive click triggers on buttons
+      if (e.target !== btnRemove && !btnRemove.contains(e.target) && e.target !== btnChange && !btnChange.contains(e.target)) {
+        hiddenImageInput.click();
+      }
+    });
+
+    // Update Dropzone visual display helper
+    const showPreview = (src) => {
+      previewImage.src = src;
+      placeholder.classList.add('d-none');
+      previewContainer.classList.remove('d-none');
+    };
+
+    const resetDropzone = () => {
+      previewImage.src = '';
+      previewContainer.classList.add('d-none');
+      placeholder.classList.remove('d-none');
+    };
+
+    // If product has an image initially
+    {% if object and object.image %}
+      showPreview("{{ object.image.url }}");
+    {% endif %}
+
+    hiddenImageInput.addEventListener('change', function() {
+      const file = this.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          showPreview(e.target.result);
+        };
+        reader.readAsDataURL(file);
+        
+        // Uncheck the clear image checkbox if it exists
+        const clearCheckbox = document.getElementById('image-clear_id');
+        if (clearCheckbox) clearCheckbox.checked = false;
+      }
+    });
+
+    btnRemove.addEventListener('click', function(e) {
+      e.stopPropagation();
+      hiddenImageInput.value = ''; // clear input
+      resetDropzone();
+
+      // Check the clear image checkbox if Django rendered it
+      const clearCheckbox = document.getElementById('image-clear_id');
+      if (clearCheckbox) clearCheckbox.checked = true;
+    });
+
+    btnChange.addEventListener('click', function(e) {
+      e.stopPropagation();
+      hiddenImageInput.click();
+    });
+
+    // Drag over styling
+    customDropzone.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      this.style.borderColor = '#b05027';
+      this.style.backgroundColor = '#fdf6f2';
+    });
+
+    customDropzone.addEventListener('dragleave', function(e) {
+      e.preventDefault();
+      this.style.borderColor = '#dce2ea';
+      this.style.backgroundColor = '#f8fafc';
+    });
+
+    customDropzone.addEventListener('drop', function(e) {
+      e.preventDefault();
+      this.style.borderColor = '#dce2ea';
+      this.style.backgroundColor = '#f8fafc';
+      
+      if (e.dataTransfer.files.length > 0) {
+        hiddenImageInput.files = e.dataTransfer.files;
+        // Trigger manual change event
+        const event = new Event('change');
+        hiddenImageInput.dispatchEvent(event);
+      }
+    });
+
+    // 5. Visibility Card Dynamic style updates
+    const activeSwitch = document.getElementById('id_is_active');
+    const visibilityCard = document.getElementById('visibilityCard');
+    if (activeSwitch && visibilityCard) {
+      activeSwitch.addEventListener('change', function() {
+        if (this.checked) {
+          visibilityCard.classList.add('active');
+        } else {
+          visibilityCard.classList.remove('active');
+        }
+      });
+    }
+
+  });
+</script>
+{% endblock %}
