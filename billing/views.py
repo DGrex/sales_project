@@ -175,26 +175,56 @@ def product_list(request):
 
     items = items.distinct()
 
+    # Determine selected columns for display and export
+    ALL_COLUMNS = [
+        ('name', 'Nombre'),
+        ('description', 'Descripción'),
+        ('brand', 'Marca'),
+        ('group', 'Grupo'),
+        ('unit_price', 'Precio'),
+        ('stock', 'Stock'),
+        ('balance', 'Balance'),
+        ('suppliers', 'Proveedores'),
+        ('is_active', 'Activo'),
+    ]
+    default_columns = [c[0] for c in ALL_COLUMNS]
+    selected_columns = request.GET.getlist('columns') or default_columns
+    column_verbose = dict(ALL_COLUMNS)
+    
     # ── Export ────────────────────────────────────────────────
     export = request.GET.get('export', '')
     if export in ('pdf', 'excel'):
         exporter = ExportMixin()
         exporter.export_filename = 'productos'
         exporter.export_title = 'Listado de Productos'
-        exporter.export_headers = ['Nombre', 'Descripcion', 'Marca', 'Grupo', 'Precio', 'Stock', 'Proveedores', 'Activo']
-        exporter.get_export_rows = lambda qs: [
-            [
-                p.name,
-                p.description or '-',
-                p.brand.name,
-                p.group.name,
-                f'${p.unit_price}',
-                p.stock,
-                ', '.join(s.name for s in p.suppliers.all()) or '-',
-                'Si' if p.is_active else 'No',
-            ]
-            for p in qs
-        ]
+        # Use selected columns for export headers
+        exporter.export_headers = [column_verbose[col] for col in selected_columns]
+        def get_export_rows(qs):
+            rows = []
+            for p in qs:
+                row = []
+                for col in selected_columns:
+                    if col == 'name':
+                        row.append(p.name)
+                    elif col == 'description':
+                        row.append(p.description or '-')
+                    elif col == 'brand':
+                        row.append(p.brand.name)
+                    elif col == 'group':
+                        row.append(p.group.name)
+                    elif col == 'unit_price':
+                        row.append(f'${p.unit_price}')
+                    elif col == 'stock':
+                        row.append(p.stock)
+                    elif col == 'balance':
+                        row.append(f'${p.balance}')
+                    elif col == 'suppliers':
+                        row.append(', '.join(s.name for s in p.suppliers.all()) or '-')
+                    elif col == 'is_active':
+                        row.append('Si' if p.is_active else 'No')
+                rows.append(row)
+            return rows
+        exporter.get_export_rows = get_export_rows
         if export == 'pdf':
             return exporter.export_to_pdf(items)
         else:
@@ -229,6 +259,8 @@ def product_list(request):
         'brands': Brand.objects.filter(is_active=True),
         'groups': ProductGroup.objects.filter(is_active=True),
         'suppliers': Supplier.objects.filter(is_active=True),
+        'available_columns': ALL_COLUMNS,
+        'selected_columns': selected_columns,
     }
     return render(request, 'billing/product_list.html', context)
 

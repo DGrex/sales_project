@@ -75,6 +75,60 @@
   .modal-footer-custom { background: #f8fafc; border-top: 1px solid #eef1f6; padding: 14px 22px; }
 </style>
 
+<!-- Column selector dynamic label script -->
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const checkboxes = document.querySelectorAll('.col-checkbox');
+    const label = document.getElementById('columnSelectLabel');
+    const selectAllBtn = document.getElementById('selectAllColumns');
+    const clearAllBtn = document.getElementById('clearAllColumns');
+
+    function updateLabel() {
+      if (!label) return;
+      const checkedBoxes = document.querySelectorAll('.col-checkbox:checked');
+      const checkedCount = checkedBoxes.length;
+      const totalCount = checkboxes.length;
+      
+      if (checkedCount === totalCount) {
+        label.textContent = "Todas";
+      } else if (checkedCount === 0) {
+        label.textContent = "Ninguna";
+      } else {
+        const checkedNames = [];
+        checkedBoxes.forEach(cb => {
+          checkedNames.push(cb.nextElementSibling.textContent.trim());
+        });
+        label.textContent = checkedNames.join(', ');
+      }
+    }
+
+    checkboxes.forEach(cb => {
+      cb.addEventListener('change', updateLabel);
+    });
+
+    if (selectAllBtn) {
+      selectAllBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        checkboxes.forEach(cb => cb.checked = true);
+        updateLabel();
+      });
+    }
+
+    if (clearAllBtn) {
+      clearAllBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        checkboxes.forEach(cb => cb.checked = false);
+        updateLabel();
+      });
+    }
+
+    // Initialize label
+    updateLabel();
+  });
+</script>
+
 <div class="container-fluid py-4">
 
   <!-- ── Page Header ── -->
@@ -193,6 +247,36 @@
           </select>
         </div>
 
+        <!-- Columnas a Mostrar / Exportar -->
+        <div class="col-md-2">
+          <div class="filter-label"><i class="fas fa-columns me-1"></i>Columnas (Mostrar/Exportar)</div>
+          <div class="dropdown">
+            <button class="form-select form-select-sm text-start d-flex justify-content-between align-items-center" type="button" id="columnSelectDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside" style="background-image: none; padding-right: 10px;">
+              <span id="columnSelectLabel" class="text-truncate" style="max-width: 130px; display: inline-block;">
+                Cargando...
+              </span>
+              <i class="fas fa-chevron-down text-muted" style="font-size: 0.7rem;"></i>
+            </button>
+            <div class="dropdown-menu p-3 shadow border-0" aria-labelledby="columnSelectDropdown" style="min-width: 250px; border-radius: 10px; max-height: 300px; overflow-y: auto; z-index: 1050;">
+              <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                <span class="fw-bold text-dark" style="font-size: 0.8rem;">Columnas</span>
+                <div>
+                  <button type="button" class="btn btn-link btn-xs p-0 text-decoration-none me-2" id="selectAllColumns" style="font-size: 0.75rem; color: #b05027;">Todas</button>
+                  <button type="button" class="btn btn-link btn-xs p-0 text-decoration-none text-danger" id="clearAllColumns" style="font-size: 0.75rem;">Ninguna</button>
+                </div>
+              </div>
+              {% for col_id, col_name in available_columns %}
+                <div class="form-check mb-2">
+                  <input class="form-check-input col-checkbox" type="checkbox" name="columns" id="col_{{ col_id }}" value="{{ col_id }}" {% if col_id in selected_columns %}checked{% endif %} style="cursor: pointer;">
+                  <label class="form-check-label text-dark" style="font-size: 0.85rem; cursor: pointer; user-select: none;" for="col_{{ col_id }}">
+                    {{ col_name }}
+                  </label>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <!-- Action row: filter + clear + export -->
@@ -207,7 +291,7 @@
         </div>
 
         <!-- Export buttons (preserves current filters) -->
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 align-items-center">
           <a href="?{{ filter_querystring }}&export=pdf"
              class="btn-pdf d-flex align-items-center gap-2"
              title="Descargar PDF con los registros filtrados">
@@ -229,28 +313,43 @@
     <table class="table mb-0">
       <thead>
         <tr>
-          <th>Producto</th>
-          <th>Marca</th>
-          <th>Grupo</th>
-          <th>Precio</th>
-          <th>Stock</th>
-          <th>Proveedores</th>
-          <th>Estado</th>
+          {% if 'name' in selected_columns %}<th>Nombre</th>{% endif %}
+          {% if 'description' in selected_columns %}<th>Descripción</th>{% endif %}
+          {% if 'brand' in selected_columns %}<th>Marca</th>{% endif %}
+          {% if 'group' in selected_columns %}<th>Grupo</th>{% endif %}
+          {% if 'unit_price' in selected_columns %}<th>Precio</th>{% endif %}
+          {% if 'stock' in selected_columns %}<th>Stock</th>{% endif %}
+          {% if 'balance' in selected_columns %}<th>Balance</th>{% endif %}
+          {% if 'suppliers' in selected_columns %}<th>Proveedores</th>{% endif %}
+          {% if 'is_active' in selected_columns %}<th>Estado</th>{% endif %}
           <th class="text-end">Acciones</th>
         </tr>
       </thead>
       <tbody>
         {% for item in page_obj %}
         <tr>
+          {% if 'name' in selected_columns %}
+          <td><div class="fw-bold text-dark">{{ item.name }}</div></td>
+          {% endif %}
+          {% if 'description' in selected_columns %}
           <td>
-            <div class="fw-bold text-dark">{{ item.name }}</div>
             {% if item.description %}
               <div class="text-muted" style="font-size:.76rem; max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ item.description }}</div>
+            {% else %}
+              <span class="text-muted fst-italic" style="font-size:.8rem;">—</span>
             {% endif %}
           </td>
+          {% endif %}
+          {% if 'brand' in selected_columns %}
           <td><span class="badge bg-secondary bg-opacity-75 rounded-pill" style="font-size:.72rem;">{{ item.brand.name }}</span></td>
+          {% endif %}
+          {% if 'group' in selected_columns %}
           <td style="font-size:.85rem;">{{ item.group.name }}</td>
+          {% endif %}
+          {% if 'unit_price' in selected_columns %}
           <td class="fw-bold" style="color:#065f46;">${{ item.unit_price }}</td>
+          {% endif %}
+          {% if 'stock' in selected_columns %}
           <td>
             {% if item.stock == 0 %}
               <span class="badge-stock-out"><i class="fas fa-times-circle me-1"></i>{{ item.stock }}</span>
@@ -262,6 +361,11 @@
               <span class="badge-stock-ok"><i class="fas fa-check-circle me-1"></i>{{ item.stock }}</span>
             {% endif %}
           </td>
+          {% endif %}
+          {% if 'balance' in selected_columns %}
+          <td class="fw-bold text-success">${{ item.balance }}</td>
+          {% endif %}
+          {% if 'suppliers' in selected_columns %}
           <td>
             {% for s in item.suppliers.all %}
               <span class="badge bg-light text-dark border" style="font-size:.7rem;">{{ s.name }}</span>
@@ -269,6 +373,8 @@
               <span class="text-muted fst-italic" style="font-size:.8rem;">—</span>
             {% endfor %}
           </td>
+          {% endif %}
+          {% if 'is_active' in selected_columns %}
           <td>
             {% if item.is_active %}
               <span class="badge-active"><i class="fas fa-circle me-1" style="font-size:.4rem;"></i>Activo</span>
@@ -276,6 +382,7 @@
               <span class="badge-inactive"><i class="fas fa-circle me-1" style="font-size:.4rem;"></i>Inactivo</span>
             {% endif %}
           </td>
+          {% endif %}
           <td class="text-end">
             <div class="d-flex gap-1 justify-content-end">
               <button class="btn-view" data-bs-toggle="modal" data-bs-target="#viewModal{{ item.pk }}" title="Ver detalles">
@@ -339,6 +446,10 @@
                         <div class="stat-label"><i class="fas fa-cubes me-1"></i>Stock Actual</div>
                         <div class="stat-value">{{ item.stock }} uds.</div>
                       </div>
+                      <div class="stat-card" style="background: #fdf2f8; border: 1px solid #fbcfe8;">
+                        <div class="stat-label text-pink-600"><i class="fas fa-wallet me-1"></i>Balance</div>
+                        <div class="stat-value text-pink-700">${{ item.balance }}</div>
+                      </div>
                     </div>
 
                     <div>
@@ -392,7 +503,7 @@
 
         {% empty %}
         <tr>
-          <td colspan="8" class="text-center py-5">
+          <td colspan="{{ selected_columns|length|add:1 }}" class="text-center py-5">
             <i class="fas fa-search fa-3x text-muted mb-3 d-block" style="opacity:.3;"></i>
             <div class="fw-bold text-muted mb-1">Sin resultados</div>
             <small class="text-muted">Ajusta los filtros o <a href="{% url 'billing:product_create' %}">crea un nuevo producto</a>.</small>

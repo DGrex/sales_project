@@ -30,7 +30,9 @@ class BrandForm(forms.ModelForm):
 from django.forms import inlineformset_factory
 from .models import Invoice, InvoiceDetail
 
+
 class InvoiceForm(forms.ModelForm):
+    """Formulario para cabecera de factura."""
     class Meta:
         model = Invoice
         fields = ['customer']
@@ -38,12 +40,16 @@ class InvoiceForm(forms.ModelForm):
             'customer': forms.Select(attrs={'class': 'form-select'}),
         }
 
+
+# Formset: permite agregar MÚLTIPLES detalles dentro de UNA factura
+# extra=3: muestra 3 filas vacías para agregar productos
+# can_delete=True: permite eliminar filas
 InvoiceDetailFormSet = inlineformset_factory(
-    Invoice,
-    InvoiceDetail,
+    Invoice,           # Modelo padre
+    InvoiceDetail,     # Modelo hijo
     fields=['product', 'quantity', 'unit_price'],
-    extra=3,
-    can_delete=True,
+    extra=3,           # 3 filas vacías para agregar
+    can_delete=True,   # Checkbox para eliminar filas
     widgets={
         'product': forms.Select(attrs={'class': 'form-select'}),
         'quantity': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
@@ -51,26 +57,44 @@ InvoiceDetailFormSet = inlineformset_factory(
     }
 )
 
+
 from .models import Product
 
 class ProductForm(forms.ModelForm):
+    # Non‑model read‑only field for calculated balance
+    balance = forms.DecimalField(
+        required=False,
+        label='Balance',
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'readonly': 'readonly',
+            'placeholder': 'Calculated automatically',
+        })
+    )
+
     class Meta:
         model = Product
         fields = ['name', 'description', 'brand', 'group', 'suppliers', 'unit_price', 'stock', 'image', 'is_active']
         widgets = {
-            'name': forms.TextInput(attrs={'class': 'form-control'}),
-            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej. "Laptop Pro"'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Descripción breve del producto...'}),
             'brand': forms.Select(attrs={'class': 'form-select'}),
             'group': forms.Select(attrs={'class': 'form-select'}),
             'suppliers': forms.SelectMultiple(attrs={'class': 'form-select'}),
-            'unit_price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
-            'stock': forms.NumberInput(attrs={'class': 'form-control'}),
+            'unit_price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0.01', 'placeholder': 'Precio unitario (p. ej. 12.99)'}),
+            'stock': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Cantidad en stock'}),
             'image': forms.ClearableFileInput(attrs={'class': 'form-control'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+        help_texts = {
+            'unit_price': 'Ingrese un valor numérico mayor que 0.',
+            'stock': 'Número entero de unidades disponibles.',
         }
 
     def clean_unit_price(self):
         unit_price = self.cleaned_data.get('unit_price')
-        if unit_price is not None and unit_price <= 0:
-            raise forms.ValidationError("El precio unitario debe ser mayor a 0.")
-        return unit_price
+        if unit_price is None:
+            raise forms.ValidationError("El precio unitario es obligatorio.")
+        if unit_price <= 0:
+            raise forms.ValidationError("El precio unitario debe ser mayor a cero.")
+        return unit_price

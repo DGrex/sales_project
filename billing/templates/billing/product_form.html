@@ -206,6 +206,16 @@
                 <div class="text-danger small mt-1"><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</div>
               {% endfor %}
             </div>
+            
+            <!-- Balance (Read-only) -->
+            <div class="col-md-12 field-container mt-3">
+              <label class="form-label text-success"><i class="fas fa-wallet me-1"></i> Balance Estimado</label>
+              <div class="input-group">
+                <span class="input-group-text bg-success text-white border-success"><i class="fas fa-dollar-sign"></i></span>
+                <input type="text" id="calculated_balance" class="form-control fw-bold text-success border-success bg-white" readonly value="$0.00">
+              </div>
+              <small class="text-muted mt-1 d-block">Se calcula automáticamente: Precio × Stock.</small>
+            </div>
           </div>
         </div>
 
@@ -355,18 +365,36 @@
       updateCounter(); // Init
     }
 
-    // 3. Real-time client-side price validation focus
+    // 3. Real-time client-side price validation focus & Balance calculation
     const priceInput = document.getElementById('id_unit_price');
-    if (priceInput) {
-      priceInput.addEventListener('input', function() {
-        const val = parseFloat(this.value);
-        if (isNaN(val) || val <= 0) {
-          this.classList.add('is-invalid');
-        } else {
-          this.classList.remove('is-invalid');
-        }
-      });
+    const stockInput = document.getElementById('id_stock');
+    const calcBalance = document.getElementById('calculated_balance');
+
+    function updateBalanceAndValidate() {
+      if (!priceInput) return;
+      const val = parseFloat(priceInput.value);
+      if (isNaN(val) || val <= 0) {
+        priceInput.classList.add('is-invalid');
+      } else {
+        priceInput.classList.remove('is-invalid');
+      }
+
+      if (calcBalance && stockInput) {
+        const stock = parseInt(stockInput.value) || 0;
+        const price = (!isNaN(val) && val > 0) ? val : 0;
+        const balance = stock * price;
+        calcBalance.value = '$' + balance.toFixed(2);
+      }
     }
+
+    if (priceInput) {
+      priceInput.addEventListener('input', updateBalanceAndValidate);
+    }
+    if (stockInput) {
+      stockInput.addEventListener('input', updateBalanceAndValidate);
+    }
+    updateBalanceAndValidate(); // Init
+
 
     // 4. Custom Drag & Drop Zone Handler
     const hiddenImageInput = document.getElementById('id_image');
