@@ -2,7 +2,10 @@ from django.urls import path
 from . import views
 app_name = 'billing'
 urlpatterns = [
-    path('signup/', views.SignUpView.as_view(), name='signup'),
+    # Home (Página principal)
+    path('', views.home, name='home'), 
+    # Auth
+    path('signup/', views.SignUpView.as_view(), name='signup'), 
     # Brand (FBV)
     path('brands/', views.brand_list, name='brand_list'),
     path('brands/create/', views.brand_create, name='brand_create'),

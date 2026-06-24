@@ -14,6 +14,21 @@ from django.db import models
 from shared.mixins import StaffRequiredMixin
 from shared.decorators import audit_action
 
+
+# === HOME (Página principal) ===
+@login_required
+def home(request):
+    """Vista principal del sistema. Muestra resumen general."""
+    context = {
+        'total_brands': Brand.objects.count(),
+        'total_products': Product.objects.count(),
+        'total_customers': Customer.objects.count(),
+        'total_invoices': Invoice.objects.count(),
+        'recent_invoices': Invoice.objects.all()[:5],  # Últimas 5
+        'low_stock': Product.objects.filter(stock__lte=5, is_active=True),
+    }
+    return render(request, 'billing/home.html', context)
+
 # === REGISTRO ===
 class SignUpView(CreateView):
     form_class = SignUpForm
